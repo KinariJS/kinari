@@ -1,0 +1,10 @@
+[wrap-file]
+directory = mozjs-linux-x86_64
+source_url = https://github.com/KinariJS/mozjs/releases/download/mozjs150/mozjs-linux-x86_64.zip
+source_filename = mozjs-linux-x86_64.zip
+source_fallback_url = https://github.com/KinariJS/mozjs/releases/download/mozjs150/mozjs-linux-x86_64.zip
+source_hash = 9361507703cafa7cadd0333ce97fef894d6f0e1fc1a44d20d7f40ce71dcf442c
+patch_directory = mozjs
+
+[provide]
+mozjs_linux_dep = mozjs_linux_dep
