@@ -1,60 +1,47 @@
-#include <cstdio>
-
 #include <jsapi.h>
-#include <js/CompilationAndEvaluation.h>
-#include <js/SourceText.h>
+#include <jsfriendapi.h>
 
-#include "boilerplate.hpp"
+#include "kinari.hpp"
+#include "js/Initialization.h"
 
-// This example illustrates the bare minimum you need to do to execute a
-// JavaScript program using embedded SpiderMonkey. It does no error handling and
-// simply exits if something goes wrong.
-//
-// See 'boilerplate.cpp' for the parts of this example that are reused in many
-// simple embedding examples.
-//
-// To use the interpreter you need to create a context and a global object, and
-// do some setup on both of these. You also need to enter a "realm" (environment
-// within one global object) before you can execute code.
+static JSContext *init();
+static void deinit(JSContext *ctx);
 
-static bool ExecuteCodePrintResult(JSContext* cx, const char* code) {
-    JS::CompileOptions options(cx);
-    options.setFileAndLine("noname", 1);
-
-    JS::SourceText<mozilla::Utf8Unit> source;
-    if (!source.init(cx, code, strlen(code), JS::SourceOwnership::Borrowed)) {
-        return false;
-    }
-
-    JS::RootedValue rval(cx);
-    if (!JS::Evaluate(cx, options, source, &rval)) return false;
-
-    // There are many ways to display an arbitrary value as a result. In this
-    // case, we know that the value is an ASCII string because of the expression
-    // that we executed, so we can just print the string directly.
-    printf("%s\n", JS_EncodeStringToASCII(cx, rval.toString()).get());
-    return true;
-}
-
-static bool HelloExample(JSContext* cx) {
-    JS::RootedObject global(cx, boilerplate::CreateGlobal(cx));
-    if (!global) {
-        return false;
-    }
-
-    JSAutoRealm ar(cx, global);
-
-    // The 'js' delimiter is meaningless, but it's useful for marking C++ raw
-    // strings semantically.
-    return ExecuteCodePrintResult(cx, R"js(
-    `hello world, it is ${new Date()}`
-  )js");
+namespace kinari {
+    JSObject *create_global(JSContext *ctx);
 }
 
 int main(int argc, const char* argv[])
 {
-    if (!boilerplate::RunExample(HelloExample)) {
-        return 1;
+    JSContext *ctx = init();
+    {
+        const JS::Rooted<JSObject*> global(ctx, kinari::create_global(ctx));
+        if (!global) return 1;
+
+        JSAutoRealm realm(ctx, global);
+
+        const kinari::Kinari kinari(ctx);
+        kinari.populate_global(global);
     }
+    deinit(ctx);
     return 0;
+}
+
+static JSContext *init()
+{
+    JS_Init();
+
+    JSContext *ctx = JS_NewContext(JS::DefaultHeapMaxBytes);
+    if (ctx == nullptr) return nullptr;
+
+    if (!js::UseInternalJobQueues(ctx)) return nullptr;
+    if (!JS::InitSelfHostedCode(ctx)) return nullptr;
+
+    return ctx;
+}
+
+static void deinit(JSContext *ctx)
+{
+    JS_DestroyContext(ctx);
+    JS_ShutDown();
 }

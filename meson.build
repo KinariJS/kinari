@@ -4,6 +4,12 @@ mozjs_p = subproject('mozjs')
 mozjs = mozjs_p.get_variable('mozjs_dep')
 
 inc = include_directories('include')
-src = ['src/main.cpp', 'src/boilerplate.cpp']
+src = ['src/main.cpp', 'src/kinari.cpp', 'src/global/global.cpp', 'src/global/print.cpp']
 
-executable('kinari', src, dependencies: mozjs, include_directories: inc)
+executable('kinari',
+    src,
+    export_dynamic: true,
+    cpp_args: ['-Wno-invalid-offsetof'],
+    dependencies: mozjs,
+    include_directories: inc,
+    link_args: ['-fuse-ld=mold'])
